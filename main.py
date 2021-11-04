@@ -10,7 +10,7 @@ def main():
 
 def cat_data():
     """
-    Displays a bar chart comparing four categories of housing and their prices in two regions of the UK.
+    Displays two bar charts to compare four categories of housing and their prices in two regions of the UK.
     """
 
     df = read_csv("A_housePriceData_2021/Average-prices-Property-Type-2021-05_wrangled.csv")
@@ -59,7 +59,7 @@ def cat_data():
         elif len(newcastle_average_prices) == 0:
             newcastle_average_prices = average_data
 
-    # Configuration settings to make plots easier to understand
+    # Configuration settings to make plots clearer and more informative
     fig, (ax1, ax2) = plt.subplots(1, 2)
     fig.tight_layout(w_pad=2)
     fig.suptitle("Comparison of four categories of housing and their prices in two\nregions of the UK")
@@ -84,28 +84,66 @@ def cat_data():
 
 
 def num_data():
+    """
+    Displays a scatter graph comparing the relationship between broadband upload and download speeds in all regions of
+    the UK. Calculates the correlation coefficient, regression line and outliers and displays these on the graph.
+    """
+
     df = read_csv("B_broadbandData_2021/202006_fixed_laua_performance_wrangled.csv")
 
-    down_Q1 = df["averageDown"].quantile(0.25)
-    down_Q3 = df["averageDown"].quantile(0.75)
-    down_IQR = down_Q3 - down_Q1
-    down_lower_lim = down_Q1 - 1.5 * down_IQR
-    down_upper_lim = down_Q3 + 1.5 * down_IQR
+    # Finds all average download values not in the IQR and shows which are outliers in down_outliers
+    down_q1 = df["averageDown"].quantile(0.25)
+    down_q3 = df["averageDown"].quantile(0.75)
+    down_iqr = down_q3 - down_q1
+    down_lower_lim = down_q1 - 1.5 * down_iqr
+    down_upper_lim = down_q3 + 1.5 * down_iqr
     down_outliers = (df["averageDown"] < down_lower_lim) + (df["averageDown"] > down_upper_lim)
 
-    upload_Q1 = df["averageUpload"].quantile(0.25)
+    # Finds all average upload values not in the IQR and shows which are outliers in upload_outliers
+    upload_q1 = df["averageUpload"].quantile(0.25)
+    upload_q3 = df["averageUpload"].quantile(0.75)
+    upload_iqr = upload_q3 - upload_q1
+    upload_lower_lim = upload_q1 - 1.5 * upload_iqr
+    upload_upper_lim = upload_q3 + 1.5 * upload_iqr
+    upload_outliers = (df["averageUpload"] < upload_lower_lim) + (df["averageUpload"] > upload_upper_lim)
 
-    coef = np.polyfit(df["averageUpload"], df["averageDown"], 1)
-    poly1d_fn = np.poly1d(coef)
-    plt.plot(df["averageUpload"], df["averageDown"], 'co', df["averageUpload"], poly1d_fn(df["averageUpload"]),
-             "orange")
+    # outliers is True only if index is True in down_outliers and upload_outliers
+    outliers = down_outliers * upload_outliers
 
+    # Gets upload and download values for each outlier
+    i = 0
+    outliers_values = pd.DataFrame()
+    while i < len(df):
+        if outliers.iloc[i]:
+            outliers_values = pd.concat([pd.DataFrame({"averageDown": [df.iloc[i]["averageDown"]],
+                                                       "averageUpload": [df.iloc[i]["averageUpload"]]}),
+                                         outliers_values], ignore_index=True)
+        i += 1
+
+    # Calculates correlation coefficient
+    correlation = df["averageDown"].corr(df["averageUpload"])
+
+    # Calculates regression line
+    coefficient = np.polyfit(df["averageUpload"], df["averageDown"], 1)
+    poly1d_fn = np.poly1d(coefficient)
+
+    # Displays scatter points with label showing the correlation coefficient
+    plt.plot(df["averageUpload"], df["averageDown"], "co", label="Correlation: " +
+                                                                 str('%.2f' % correlation))
+    # Highlights outliers in red
+    plt.plot(outliers_values["averageUpload"], outliers_values["averageDown"], "ro", label="Outliers")
+    # Displays regression line
+    plt.plot(df["averageUpload"], poly1d_fn(df["averageUpload"]), "orange", label="Regression Line")
+
+    # Configuration settings to make plots clearer and more informative
     plt.title("Comparison of the relationship between broadband upload and\ndownload speeds in all regions of the UK")
+    plt.legend(loc="lower right")
     plt.ylabel("Average download speed (Mb/s)")
     plt.xlabel("Average upload speed (Mb/s)")
     plt.xlim(0, 100)
     plt.ylim(0, 180)
     plt.grid()
+
     plt.show()
 
 
