@@ -7,6 +7,7 @@ def main():
     """
     Main method, allows user to choose which part of the project to run.
     """
+
     user_input = input("Which part of the project would you like to run?\nEnter A, B, C or exit: ")
     if user_input == "A":
         cat_data()
