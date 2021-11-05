@@ -4,8 +4,21 @@ import numpy as np
 
 
 def main():
-    cat_data()
-    num_data()
+    """
+    Main method, allows user to choose which part of the project to run.
+    """
+    user_input = input("Which part of the project would you like to run?\nEnter A, B, C or exit: ")
+    if user_input == "A":
+        cat_data()
+    elif user_input == "B":
+        num_data()
+    elif user_input == "C":
+        time_ser_data()
+    elif user_input == "exit":
+        quit()
+    else:
+        print("Incorrect entry, please try again.")
+        main()
 
 
 def cat_data():
@@ -13,7 +26,7 @@ def cat_data():
     Displays two bar charts to compare four categories of housing and their prices in two regions of the UK.
     """
 
-    df = read_csv("A_housePriceData_2021/Average-prices-Property-Type-2021-05_wrangled.csv")
+    df = pd.read_csv("A_housePriceData_2021/Average-prices-Property-Type-2021-05_wrangled.csv")
 
     i = 0
     london_df = pd.DataFrame()
@@ -67,8 +80,8 @@ def cat_data():
     columns = ["Detached", "Semi-\nDetached", "Terraced", "Flat"]
 
     # First bar chart for London data
-    ax1.bar(columns, list(london_average_prices.iloc[0]), color="cyan")
-    ax1.set_title("London", color="cyan")
+    ax1.bar(columns, list(london_average_prices.iloc[0]), color="blue")
+    ax1.set_title("London", color="blue")
     ax1.set_ylabel("Average price in thousands (£)")
     ax1.set_ylim(0, 700)
     ax1.yaxis.grid()
@@ -79,8 +92,9 @@ def cat_data():
     ax2.set_ylabel("Average price in thousands (£)")
     ax2.set_ylim(0, 700)
     ax2.yaxis.grid()
-
     plt.show()
+
+    main()
 
 
 def num_data():
@@ -89,7 +103,7 @@ def num_data():
     the UK. Calculates the correlation coefficient, regression line and outliers and displays these on the graph.
     """
 
-    df = read_csv("B_broadbandData_2021/202006_fixed_laua_performance_wrangled.csv")
+    df = pd.read_csv("B_broadbandData_2021/202006_fixed_laua_performance_wrangled.csv")
 
     # Finds all average download values not in the IQR and shows which are outliers in down_outliers
     down_q1 = df["averageDown"].quantile(0.25)
@@ -128,14 +142,14 @@ def num_data():
     poly1d_fn = np.poly1d(coefficient)
 
     # Displays scatter points with label showing the correlation coefficient
-    plt.plot(df["averageUpload"], df["averageDown"], "co", label="Correlation: " +
+    plt.plot(df["averageUpload"], df["averageDown"], "bo", label="Correlation: " +
                                                                  str('%.2f' % correlation))
     # Highlights outliers in red
     plt.plot(outliers_values["averageUpload"], outliers_values["averageDown"], "ro", label="Outliers")
     # Displays regression line
     plt.plot(df["averageUpload"], poly1d_fn(df["averageUpload"]), "orange", label="Regression Line")
 
-    # Configuration settings to make plots clearer and more informative
+    # Configuration settings to make plot clearer and more informative
     plt.title("Comparison of the relationship between broadband upload and\ndownload speeds in all regions of the UK")
     plt.legend(loc="lower right")
     plt.ylabel("Average download speed (Mb/s)")
@@ -143,17 +157,38 @@ def num_data():
     plt.xlim(0, 100)
     plt.ylim(0, 180)
     plt.grid()
-
     plt.show()
+
+    main()
 
 
 def time_ser_data():
-    print("test")
+    """
+    Displays a line graph comparing the highest daily FTSE share index value over time. Calculates and displays a
+    regression line.
+    """
+    df = pd.read_csv("C_financialData_2021/ftse_data_wrangled.csv")
+    # Convert date data from string into date
+    df["date"] = pd.to_datetime(df["date"])
 
+    # Calculates regression line, use df.index to represent the date data
+    coefficient = np.polyfit(df.index, df["High"], 1)
+    poly1d_fn = np.poly1d(coefficient)
 
-def read_csv(file_name):
-    df = pd.read_csv(file_name)
-    return df
+    plt.plot(df["date"], df["High"], "blue")
+    # Displays regression line
+    plt.plot(df["date"], poly1d_fn(df.index), "orange", label="Regression Line")
+
+    # Configuration settings to make plot clearer and more informative
+    plt.title("Comparison of the highest daily FTSE share index values over time")
+    plt.legend(loc="lower right")
+    plt.xlabel("Year")
+    plt.ylabel("FTSE Share Index")
+    plt.ylim(0, 8000)
+    plt.grid()
+    plt.show()
+
+    main()
 
 
 if __name__ == '__main__':
