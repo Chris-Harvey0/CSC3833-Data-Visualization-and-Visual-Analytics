@@ -5,21 +5,12 @@ import numpy as np
 
 def main():
     """
-    Main method, allows user to choose which part of the project to run.
+    Main method
     """
 
-    user_input = input("Which part of the project would you like to run?\nEnter A, B, C or exit: ")
-    if user_input == "A":
-        cat_data()
-    elif user_input == "B":
-        num_data()
-    elif user_input == "C":
-        time_ser_data()
-    elif user_input == "exit":
-        quit()
-    else:
-        print("Incorrect entry, please try again.")
-        main()
+    cat_data()
+    num_data()
+    time_ser_data()
 
 
 def cat_data():
@@ -29,73 +20,32 @@ def cat_data():
 
     df = pd.read_csv("A_housePriceData_2021/Average-prices-Property-Type-2021-05_wrangled.csv")
 
-    i = 0
-    london_df = pd.DataFrame()
-    newcastle_df = pd.DataFrame()
     # Separates the data by region and does not add unnecessary rows
-    while i < len(df):
-        if df.iloc[i]["Region_Name"] == "London":
-            london_df = pd.concat([pd.DataFrame({"propertyType": [df.iloc[i]["propertyType"]],
-                                                 "averagePrice": [df.iloc[i]["averagePrice"]]}),
-                                   london_df], ignore_index=True)
-            i += 1
-        else:
-            newcastle_df = pd.concat([pd.DataFrame({"propertyType": [df.iloc[i]["propertyType"]],
-                                                    "averagePrice": [df.iloc[i]["averagePrice"]]}),
-                                      newcastle_df], ignore_index=True)
-            i += 1
+    london_df = df[df["Region_Name"].isin(["London"])]
+    newcastle_df = df[df["Region_Name"].isin(["Newcastle upon Tyne"])]
 
-    london_average_prices = pd.DataFrame()
-    newcastle_average_prices = pd.DataFrame()
-    # Separates region data into house types
-    for dataframe in [london_df, newcastle_df]:
-        # Both Semi_Detached and Detached contain "Detached" so requires manipulation to get the right data
-        detached_and_semi_detached = dataframe[dataframe["propertyType"].str.contains("Detached")]
-        semi_detached = dataframe[dataframe["propertyType"].str.contains("Semi_Detached")]
-        # Remove values from detached_and_semi_detached that exist in semi_detached
-        detached = pd.merge(detached_and_semi_detached, semi_detached, how='outer', indicator=True)
-        detached = detached.loc[detached["_merge"] == "left_only"].drop("_merge", axis=1)
-        terraced = dataframe[dataframe["propertyType"].str.contains("Terraced")]
-        flat = dataframe[dataframe["propertyType"].str.contains("Flat")]
+    average_prices = []
+    for region_df in london_df, newcastle_df:
+        for value in ["Detached", "Semi_Detached", "Terraced", "Flat"]:
+            average_prices.append(region_df[region_df["propertyType"].isin([value])]["averagePrice"].mean()/1000)
 
-        # Calculates average for all house types
-        # /1000 to make y-axis values smaller on the graph
-        average_data = pd.DataFrame({"Detached": [detached["averagePrice"].mean() / 1000],
-                                     "Semi_Detached": [semi_detached["averagePrice"].mean() / 1000],
-                                     "Terraced": [terraced["averagePrice"].mean() / 1000],
-                                     "Flat": [flat["averagePrice"].mean() / 1000]})
-
-        # If london_average_prices is unpopulated then populate
-        if len(london_average_prices) == 0:
-            london_average_prices = average_data
-
-        # If newcastle_average_prices is unpopulated then populate
-        elif len(newcastle_average_prices) == 0:
-            newcastle_average_prices = average_data
+    # Adding the bar chart
+    fig = plt.figure()
+    ax = fig.add_axes([0.1, 0.1, 0.8, 0.8])
+    fig.suptitle("Comparison of four categories of housing and their prices in two\nregions of the UK")
+    x = np.arange(4)
+    bar_width = 0.4
+    ax.bar(x, list(average_prices[:4]), color="blue", width=bar_width, label="London")
+    ax.bar(x + bar_width, average_prices[4:], color="orange", width=bar_width, label="Newcastle upon Tyne")
 
     # Configuration settings to make plots clearer and more informative
-    fig, (ax1, ax2) = plt.subplots(1, 2)
-    fig.tight_layout(w_pad=2)
-    fig.suptitle("Comparison of four categories of housing and their prices in two\nregions of the UK")
-    plt.subplots_adjust(top=0.85, bottom=0.1, left=0.1)
-    columns = ["Detached", "Semi-\nDetached", "Terraced", "Flat"]
-
-    # First bar chart for London data
-    ax1.bar(columns, list(london_average_prices.iloc[0]), color="blue")
-    ax1.set_title("London", color="blue")
-    ax1.set_ylabel("Average price in thousands (£)")
-    ax1.set_ylim(0, 700)
-    ax1.yaxis.grid()
-
-    # Second bar chart for Newcastle data
-    ax2.bar(columns, list(newcastle_average_prices.iloc[0]), color="orange")
-    ax2.set_title("Newcastle", color="orange")
-    ax2.set_ylabel("Average price in thousands (£)")
-    ax2.set_ylim(0, 700)
-    ax2.yaxis.grid()
+    plt.legend(loc="upper right")
+    ax.set_ylabel("Average price in thousands (£)")
+    ax.set_ylim(0, 700)
+    ax.yaxis.grid()
+    ax.set_xticks(x + bar_width/2)
+    ax.set_xticklabels(["Detached", "Semi-Detached", "Terraced", "Flat"])
     plt.show()
-
-    main()
 
 
 def num_data():
@@ -160,8 +110,6 @@ def num_data():
     plt.grid()
     plt.show()
 
-    main()
-
 
 def time_ser_data():
     """
@@ -188,8 +136,6 @@ def time_ser_data():
     plt.ylim(0, 8000)
     plt.grid()
     plt.show()
-
-    main()
 
 
 if __name__ == '__main__':
