@@ -15,7 +15,7 @@ def main():
 
 def cat_data():
     """
-    Displays two bar charts to compare four categories of housing and their prices in two regions of the UK.
+    Displays a bar chart to compare four categories of housing and their prices in two regions of the UK.
     """
 
     df = pd.read_csv("A_housePriceData_2021/Average-prices-Property-Type-2021-05_wrangled.csv")
@@ -24,10 +24,11 @@ def cat_data():
     london_df = df[df["Region_Name"].isin(["London"])]
     newcastle_df = df[df["Region_Name"].isin(["Newcastle upon Tyne"])]
 
+    # Calculate average prices for each house type for each region
     average_prices = []
     for region_df in london_df, newcastle_df:
         for value in ["Detached", "Semi_Detached", "Terraced", "Flat"]:
-            average_prices.append(region_df[region_df["propertyType"].isin([value])]["averagePrice"].mean()/1000)
+            average_prices.append(region_df[region_df["propertyType"].isin([value])]["averagePrice"].mean() / 1000)
 
     # Adding the bar chart
     fig = plt.figure()
@@ -43,7 +44,7 @@ def cat_data():
     ax.set_ylabel("Average price in thousands (£)")
     ax.set_ylim(0, 700)
     ax.yaxis.grid()
-    ax.set_xticks(x + bar_width/2)
+    ax.set_xticks(x + bar_width / 2)
     ax.set_xticklabels(["Detached", "Semi-Detached", "Terraced", "Flat"])
     plt.show()
 
@@ -72,33 +73,25 @@ def num_data():
     upload_upper_lim = upload_q3 + 1.5 * upload_iqr
     upload_outliers = (df["averageUpload"] < upload_lower_lim) + (df["averageUpload"] > upload_upper_lim)
 
-    # outliers is True only if index is True in down_outliers and upload_outliers
-    outliers = down_outliers * upload_outliers
-
-    # Gets upload and download values for each outlier
-    i = 0
-    outliers_values = pd.DataFrame()
-    while i < len(df):
-        if outliers.iloc[i]:
-            outliers_values = pd.concat([pd.DataFrame({"averageDown": [df.iloc[i]["averageDown"]],
-                                                       "averageUpload": [df.iloc[i]["averageUpload"]]}),
-                                         outliers_values], ignore_index=True)
-        i += 1
+    # Combines the outliers for each axis and creates a dataframe containing no outliers
+    outliers = df[down_outliers + upload_outliers]
+    df_without_outliers = pd.concat([df, outliers]).drop_duplicates(keep=False)
 
     # Calculates correlation coefficient
-    correlation = df["averageDown"].corr(df["averageUpload"])
+    correlation = (df_without_outliers["averageDown"]).corr(df_without_outliers["averageUpload"])
 
     # Calculates regression line
-    coefficient = np.polyfit(df["averageUpload"], df["averageDown"], 1)
+    coefficient = np.polyfit(df_without_outliers["averageUpload"], df_without_outliers["averageDown"], 1)
     poly1d_fn = np.poly1d(coefficient)
 
     # Displays scatter points with label showing the correlation coefficient
-    plt.plot(df["averageUpload"], df["averageDown"], "bo", label="Correlation: " +
-                                                                 str('%.2f' % correlation))
+    plt.plot(df_without_outliers["averageUpload"], df_without_outliers["averageDown"], "bo",
+             label="Correlation: " + str('%.2f' % correlation))
     # Highlights outliers in red
-    plt.plot(outliers_values["averageUpload"], outliers_values["averageDown"], "ro", label="Outliers")
+    plt.plot(outliers["averageUpload"], outliers["averageDown"], "ro", label="Outliers")
     # Displays regression line
-    plt.plot(df["averageUpload"], poly1d_fn(df["averageUpload"]), "orange", label="Regression Line")
+    plt.plot(df_without_outliers["averageUpload"], poly1d_fn(df_without_outliers["averageUpload"]), "orange",
+             label="Regression Line")
 
     # Configuration settings to make plot clearer and more informative
     plt.title("Comparison of the relationship between broadband upload and\ndownload speeds in all regions of the UK")
