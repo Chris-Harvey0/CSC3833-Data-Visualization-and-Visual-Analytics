@@ -17,7 +17,7 @@ def main():
     time_ser_data(ax)
     plot_description(ax)
     # Saves image to file with resolution of 1920x1080
-    plt.savefig("CSC3833-State-of-the-Nation-Summative-Assignment.jpg", dpi=120)
+    plt.savefig("CSC3833-State-of-the-Nation-Summative-Assignment.png", dpi=120)
     plt.show()
 
 
@@ -72,7 +72,6 @@ def num_data(ax):
     down_outliers = find_outliers(df, "averageDown")
 
     upload_outliers = find_outliers(df, "averageUpload")
-    print(upload_outliers)
 
     # Combines the outliers for each axis and creates a dataframe with outliers removed
     outliers = df[down_outliers + upload_outliers]
